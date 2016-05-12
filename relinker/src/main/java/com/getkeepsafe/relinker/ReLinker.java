@@ -47,6 +47,10 @@ public class ReLinker {
                             File destination, ReLinkerInstance logger);
     }
 
+    public static void initialize(final Context context) {
+        ReLinkerInstance.sAppContext = context.getApplicationContext();
+    }
+
     public static void loadLibrary(final Context context, final String library) {
         loadLibrary(context, library, null, null);
     }

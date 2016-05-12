@@ -24,16 +24,16 @@ import com.getkeepsafe.relinker.elf.ElfParser;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ReLinkerInstance {
     private static final String LIB_DIR = "lib";
+
+    protected static Context sAppContext;
 
     protected final Set<String> loadedLibraries = new HashSet<>();
     protected final ReLinker.LibraryLoader libraryLoader;
@@ -86,6 +86,20 @@ public class ReLinkerInstance {
         return this;
     }
 
+    private static Context getContext() {
+        if (sAppContext == null) {
+            try {
+                final Class<?> activityThread = Class.forName("android.app.ActivityThread");
+                final Method currentApplicationMethod = activityThread.getDeclaredMethod("currentApplication");
+                sAppContext = (Context) currentApplicationMethod.invoke(null);
+            } catch (Exception e) {
+                throw new RuntimeException("ReLinker not initialized. " +
+                        "Call ReLinker.initialize() before using library classes.", e);
+            }
+        }
+        return sAppContext;
+    }
+
     /**
      * Utilizes the regular system call to attempt to load a native library. If a failure occurs,
      * then the function extracts native .so library out of the app's APK and attempts to load it.
@@ -127,8 +141,11 @@ public class ReLinkerInstance {
                             final String library,
                             final String version,
                             final ReLinker.LoadListener listener) {
-        if (context == null) {
-            throw new IllegalArgumentException("Given context is null");
+        final Context ctx;
+        if (context != null) {
+            ctx = context;
+        } else {
+            ctx = getContext();
         }
 
         if (TextUtils.isEmpty(library)) {
@@ -143,7 +160,7 @@ public class ReLinkerInstance {
                 @Override
                 public void run() {
                     try {
-                        loadLibraryInternal(context, library, version);
+                        loadLibraryInternal(ctx, library, version);
                         listener.success();
                     } catch (UnsatisfiedLinkError e) {
                         listener.failure(e);
