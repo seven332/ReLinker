@@ -2,8 +2,8 @@ apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
-group = 'com.getkeepsafe.relinker'
-version = '1.2.1'
+group = 'com.github.seven332'
+version = '1.2.2'
 
 android {
     compileSdkVersion 23
@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         minSdkVersion 9
-        versionCode 5
+        versionCode 6
         versionName project.version
     }
     buildTypes {
@@ -113,4 +113,15 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 artifacts {
     archives sourcesJar
     archives javadocJar
+}
+
+android.libraryVariants.all { variant ->
+    def name = variant.buildType.name
+    def task = project.tasks.create "jar${name.capitalize()}", Jar
+    task.dependsOn variant.javaCompile
+    task.from variant.javaCompile.destinationDir
+    task.exclude '**/BuildConfig.class'
+    task.exclude '**/R.class'
+    task.exclude '**/R$*.class'
+    artifacts.add('archives', task);
 }
