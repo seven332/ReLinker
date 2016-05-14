@@ -185,7 +185,12 @@ public class ReLinkerInstance {
             return;
         } catch (final UnsatisfiedLinkError e) {
             // :-(
-            log("Loading the library normally failed: %s", Log.getStackTraceString(e));
+            if (context != null) {
+                log("Loading the library normally failed: %s", Log.getStackTraceString(e));
+            } else {
+                // No context, can't go on
+                throw e;
+            }
         }
 
         log("%s (%s) was not loaded normally, re-linking...", library, version);
